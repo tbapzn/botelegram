@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro di Controllo - Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn.refresh {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: fadeIn 0.6s ease-out;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-header .emoji {
+            font-size: 1.8em;
+            margin-right: 10px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .stat-value.positive {
+            color: #4CAF50;
+        }
+
+        .stat-value.negative {
+            color: #f44336;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .events-log {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .event-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        .event-note {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .event-time {
+            color: #999;
+            font-size: 0.85em;
+            text-align: right;
+        }
+
+        .event-value {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-right: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.offline {
+            background: #f44336;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .last-update {
+            text-align: center;
+            color: white;
+            font-size: 0.9em;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .events-log {
+                grid-column: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Centro di Controllo Personale</h1>
+            <p>Tracking in tempo reale - Soldi • Fumo • Palestra • Mood</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn refresh" onclick="refreshData()">🔄 Aggiorna Ora</button>
+            <span style="color: white; align-self: center;">Auto-aggiornamento: 30 secondi</span>
+        </div>
+
+        <div id="error-container"></div>
+
+        <div class="dashboard">
+            <!-- SOLDI -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">💰</span>
+                    <span>Bilancio</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Oggi</span>
+                    <span class="stat-value positive" id="money-today">+0€</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Settimana</span>
+                    <span class="stat-value positive" id="money-week">+0€</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Mese</span>
+                    <span class="stat-value positive" id="money-month">+0€</span>
+                </div>
+            </div>
+
+            <!-- FUMO -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">🚬</span>
+                    <span>Fumo</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Oggi</span>
+                    <span class="stat-value" id="smoke-today">0</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Media Settimanale</span>
+                    <span class="stat-value" id="smoke-avg">0</span>
+                </div>
+                <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                    💡 Tip: Usa <code>/fumo 3</code> per registrare
+                </div>
+            </div>
+
+            <!-- PALESTRA -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">🏋️</span>
+                    <span>Palestra</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Sessioni (Mese)</span>
+                    <span class="stat-value" id="gym-total">0</span>
+                </div>
+                <div id="gym-splits" style="margin-top: 10px;"></div>
+            </div>
+
+            <!-- MOOD -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">😊</span>
+                    <span>Mood</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Media</span>
+                    <span class="stat-value" id="mood-avg">0/10</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Range</span>
+                    <span class="stat-value" id="mood-range">-</span>
+                </div>
+                <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                    💡 Tip: Usa <code>/mood 8</code> per registrare
+                </div>
+            </div>
+
+            <!-- ANALISI SPESE -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">📈</span>
+                    <span>Spese per Categoria</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ANDAMENTO MOOD -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="emoji">📊</span>
+                    <span>Andamento Mood</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="moodChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOG EVENTI -->
+        <div class="events-log">
+            <div class="card-header">
+                <span class="emoji">📝</span>
+                <span>Ultimi Eventi (Ultimi 10)</span>
+            </div>
+            <div id="events-container">
+                <p class="loading">Caricamento...</p>
+            </div>
+        </div>
+
+        <div class="last-update">
+            <p>Ultimo aggiornamento: <span id="last-update">--:--</span></p>
+            <p>✨ Dashboard Automatico - Aggiorna ogni 30 secondi</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        let categoryChart, moodChart;
+
+        // Funzioni di formattazione
+        function formatMoney(value) {
+            const num = parseFloat(value);
+            const sign = num >= 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}€`;
+        }
+
+        function formatDate(isoDate) {
+            const date = new Date(isoDate);
+            return date.toLocaleString('it-IT', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getEventEmoji(type) {
+            const emojis = {
+                'money': '💰',
+                'smoke': '🚬',
+                'gym': '🏋️',
+                'mood': '😊',
+                'note': '📝',
+                'system': '⚙️'
+            };
+            return emojis[type] || '📌';
+        }
+
+        // Carica dati
+        async function refreshData() {
+            try {
+                // Cancella errori precedenti
+                document.getElementById('error-container').innerHTML = '';
+
+                const [stats, events, analytics] = await Promise.all([
+                    fetch(`${API_URL}/stats`).then(r => r.json()),
+                    fetch(`${API_URL}/events?limit=10`).then(r => r.json()),
+                    fetch(`${API_URL}/analytics/money`).then(r => r.json())
+                ]);
+
+                // Aggiorna statistiche soldi
+                document.getElementById('money-today').textContent = formatMoney(stats.money.today_balance);
+                document.getElementById('money-week').textContent = formatMoney(stats.money.week_balance);
+                document.getElementById('money-month').textContent = formatMoney(stats.money.month_balance);
+
+                // Aggiorna fumo
+                document.getElementById('smoke-today').textContent = stats.smoke.today;
+                document.getElementById('smoke-avg').textContent = stats.smoke.week_average.toFixed(1);
+
+                // Aggiorna palestra
+                document.getElementById('gym-total').textContent = stats.gym.total_month;
+                const gymSplits = Object.entries(stats.gym.splits)
+                    .map(([type, count]) => `<div class="stat"><span class="stat-label">${type}</span><span class="stat-value">${count}</span></div>`)
+                    .join('');
+                document.getElementById('gym-splits').innerHTML = gymSplits;
+
+                // Aggiorna mood
+                document.getElementById('mood-avg').textContent = `${stats.mood.average}/10`;
+                document.getElementById('mood-range').textContent = `${stats.mood.min} - ${stats.mood.max}`;
+
+                // Aggiorna grafici
+                updateCharts(analytics, events);
+
+                // Aggiorna log eventi
+                displayEvents(events);
+
+                // Aggiorna timestamp
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString('it-IT');
+
+            } catch (error) {
+                console.error('Errore:', error);
+                showError('❌ Errore nel caricamento dati. Assicurati che il backend sia online.');
+            }
+        }
+
+        function updateCharts(analytics, events) {
+            // Grafico Categorie
+            const categoryCtx = document.getElementById('categoryChart');
+            if (categoryCtx) {
+                const categories = analytics.by_category || {};
+                const labels = Object.keys(categories);
+                const data = Object.values(categories);
+
+                if (categoryChart) {
+                    categoryChart.destroy();
+                }
+
+                categoryChart = new Chart(categoryCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: [
+                                '#667eea', '#764ba2', '#f093fb', '#4facfe',
+                                '#00f2fe', '#43e97b', '#fa709a', '#fee140'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Grafico Mood
+            const moodCtx = document.getElementById('moodChart');
+            if (moodCtx) {
+                const moodEvents = events.filter(e => e.type === 'mood').reverse();
+                const moodLabels = moodEvents.map(e => formatDate(e.created_at));
+                const moodData = moodEvents.map(e => parseFloat(e.value));
+
+                if (moodChart) {
+                    moodChart.destroy();
+                }
+
+                moodChart = new Chart(moodCtx, {
+                    type: 'line',
+                    data: {
+                        labels: moodLabels,
+                        datasets: [{
+                            label: 'Mood',
+                            data: moodData,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 5,
+                            pointBackgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 10
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('events-container');
+            if (!events || events.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Nessun evento registrato</p>';
+                return;
+            }
+
+            container.innerHTML = events
+                .slice(0, 10)
+                .map(event => `
+                    <div class="event-item">
+                        <div>
+                            <div class="event-type">${getEventEmoji(event.type)} ${event.type}</div>
+                            ${event.note ? `<div class="event-note">${event.note}</div>` : ''}
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="event-value">${event.value}</div>
+                            <div class="event-time">${formatDate(event.created_at)}</div>
+                        </div>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function showError(message) {
+            document.getElementById('error-container').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Inizializza e auto-refresh
+        refreshData();
+        setInterval(refreshData, 30000); // Ogni 30 secondi
+    </script>
+</body>
+</html>
