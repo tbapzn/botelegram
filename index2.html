@@ -1,1 +1,1914 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centro di Controllo - Dashboard Avanzata</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn.refresh {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            animation: fadeIn 0.6s ease-out;
+            transition: transform 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-header .emoji {
+            font-size: 1.8em;
+            margin-right: 10px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .stat:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95em;
+        }
+
+        .stat-value {
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        .stat-value.positive {
+            color: #4CAF50;
+        }
+
+        .stat-value.negative {
+            color: #f44336;
+        }
+
+        .stat-value.neutral {
+            color: #FF9800;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 15px;
+        }
+
+        .mini-chart {
+            position: relative;
+            height: 200px;
+            margin-top: 15px;
+        }
+
+        .events-log {
+            grid-column: 1 / -1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .event-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-left: 4px solid #667eea;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .event-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .event-type {
+            font-weight: 600;
+            color: #333;
+            text-transform: uppercase;
+            font-size: 0.85em;
+        }
+
+        .event-note {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .event-time {
+            color: #999;
+            font-size: 0.85em;
+            text-align: right;
+        }
+
+        .event-value {
+            font-weight: 700;
+            font-size: 1.1em;
+            margin-right: 15px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 20px;
+            font-size: 0.75em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .status-badge.offline {
+            background: #f44336;
+        }
+
+        .status-badge.neutral {
+            background: #FF9800;
+        }
+
+        .loading {
+            text-align: center;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .progress-bar {
+            background: #eee;
+            border-radius: 10px;
+            height: 8px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s;
+        }
+
+        .money-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            color: white;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .trading-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .trading-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
+        }
+
+        .asset-name {
+            font-weight: 700;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .asset-price {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .asset-change {
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .asset-change.up {
+            color: #4CAF50;
+        }
+
+        .asset-change.down {
+            color: #f44336;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .last-update {
+            text-align: center;
+            color: white;
+            font-size: 0.9em;
+            margin-top: 30px;
+        }
+
+        .insight-box {
+            background: rgba(255,255,255,0.95);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #333;
+        }
+
+        .tip {
+            color: #999;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        .tip code {
+            background: #f0f0f0;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .grid-2, .grid-3, .money-section {
+                grid-template-columns: 1fr;
+            }
+
+            .events-log {
+                grid-column: 1;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Centro di Controllo Personale Avanzato</h1>
+            <p>Tracking completo: Finanze • Vizi • Salute • Mood • Analisi</p>
+        </div>
+
+        <div class="controls">
+            <button class="btn refresh" onclick="refreshData()">🔄 Aggiorna Ora</button>
+            <span style="color: white; align-self: center;">Auto-aggiornamento: 30 secondi</span>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('overview')">📈 Panoramica</button>
+            <button class="tab-btn" onclick="switchTab('money')">💰 Finanze</button>
+            <button class="tab-btn" onclick="switchTab('health')">🏥 Salute</button>
+            <button class="tab-btn" onclick="switchTab('vices')">🚬 Vizi</button>
+            <button class="tab-btn" onclick="switchTab('gym')">🏋️ Palestra</button>
+            <button class="tab-btn" onclick="switchTab('analytics')">📊 Analisi</button>
+        </div>
+
+        <div id="error-container"></div>
+
+        <!-- ===== TAB: PANORAMICA ===== -->
+        <div id="overview" class="tab-content active">
+            <div class="dashboard">
+                <!-- SOLDI QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">💰</span>
+                        <span>Bilancio Rapido</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Oggi</span>
+                        <span class="stat-value positive" id="ov-money-today">+0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settimana</span>
+                        <span class="stat-value positive" id="ov-money-week">+0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Mese</span>
+                        <span class="stat-value positive" id="ov-money-month">+0€</span>
+                    </div>
+                </div>
+
+                <!-- SALUTE QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🏥</span>
+                        <span>Indice Salute</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Idratazione</span>
+                        <span class="stat-value neutral" id="ov-hydration">0/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Sonno</span>
+                        <span class="stat-value" id="ov-sleep">0h</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Stress</span>
+                        <span class="stat-value neutral" id="ov-stress">5/10</span>
+                    </div>
+                </div>
+
+                <!-- MOOD QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">😊</span>
+                        <span>Stato Emotivo</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Mood Attuale</span>
+                        <span class="stat-value" id="ov-mood">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Serenità</span>
+                        <span class="stat-value" id="ov-serenity">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Settimana</span>
+                        <span class="stat-value" id="ov-mood-avg">-</span>
+                    </div>
+                </div>
+
+                <!-- VIZI QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🚬</span>
+                        <span>Monitoraggio Vizi</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Sigarette Oggi</span>
+                        <span class="stat-value negative" id="ov-cigs">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Canne Oggi</span>
+                        <span class="stat-value negative" id="ov-joints">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Settimanale</span>
+                        <span class="stat-value" id="ov-vices-avg">0</span>
+                    </div>
+                </div>
+
+                <!-- PALESTRA QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🏋️</span>
+                        <span>Esercizio</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Sessioni Mese</span>
+                        <span class="stat-value" id="ov-gym-total">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Ore Totali</span>
+                        <span class="stat-value" id="ov-gym-hours">0h</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Streaks Attivi</span>
+                        <span class="stat-value positive" id="ov-gym-streak">0</span>
+                    </div>
+                </div>
+
+                <!-- IMPEGNI QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">📋</span>
+                        <span>Impegni</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Completati Oggi</span>
+                        <span class="stat-value positive" id="ov-tasks-done">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">In Sospeso</span>
+                        <span class="stat-value negative" id="ov-tasks-pending">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Tasso Completamento</span>
+                        <span class="stat-value" id="ov-tasks-rate">0%</span>
+                    </div>
+                </div>
+
+                <!-- SOLDI RISPARMIATI QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🏦</span>
+                        <span>Risparmi</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Mese Corrente</span>
+                        <span class="stat-value positive" id="ov-saved-month">0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Obiettivo Mese</span>
+                        <span class="stat-value" id="ov-save-goal">0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Progresso</span>
+                        <span class="stat-value" id="ov-save-progress">0%</span>
+                    </div>
+                </div>
+
+                <!-- CIBO QUICK STAT -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🍎</span>
+                        <span>Nutrizione</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Pasti Sani Oggi</span>
+                        <span class="stat-value positive" id="ov-healthy-meals">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Calorie Stimate</span>
+                        <span class="stat-value" id="ov-calories">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Settimana</span>
+                        <span class="stat-value" id="ov-meals-avg">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFICO PANORAMICA SETTIMANALE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">📈</span>
+                    <span>Indice Salute Settimanale</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="overviewChart"></canvas>
+                </div>
+            </div>
+
+            <!-- LOG EVENTI -->
+            <div class="events-log full-width">
+                <div class="card-header">
+                    <span class="emoji">📝</span>
+                    <span>Ultimi Eventi (Ultimi 15)</span>
+                </div>
+                <div id="events-container">
+                    <p class="loading">Caricamento...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: FINANZE ===== -->
+        <div id="money" class="tab-content">
+            <div class="section-title">💰 Analisi Finanze Dettagliata</div>
+
+            <div class="money-section">
+                <!-- SOLDI DETTAGLI -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">💳</span>
+                        <span>Transazioni</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Entrate Oggi</span>
+                        <span class="stat-value positive" id="mon-income-today">+0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Spese Oggi</span>
+                        <span class="stat-value negative" id="mon-expense-today">-0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Bilancio Netto</span>
+                        <span class="stat-value positive" id="mon-net-today">+0€</span>
+                    </div>
+                    <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                        💡 Tip: Usa <code>/soldi +20</code> per registrare entrata
+                    </div>
+                </div>
+
+                <!-- STATISTICHE FINANZIARI -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">📊</span>
+                        <span>Statistiche Mese</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Entrate Totali</span>
+                        <span class="stat-value positive" id="mon-income-month">+0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Spese Totali</span>
+                        <span class="stat-value negative" id="mon-expense-month">-0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Saldo Netto</span>
+                        <span class="stat-value positive" id="mon-net-month">+0€</span>
+                    </div>
+                </div>
+
+                <!-- TRADING -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">📈</span>
+                        <span>Investimenti</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Portafoglio Totale</span>
+                        <span class="stat-value positive" id="mon-portfolio">0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Guadagni/Perdite</span>
+                        <span class="stat-value positive" id="mon-returns">+0€</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">ROI</span>
+                        <span class="stat-value positive" id="mon-roi">+0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CATEGORIE SPESE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">🏪</span>
+                    <span>Spese per Categoria (Ultimi 30 giorni)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="expenseCategoryChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ANDAMENTO ENTRATE/SPESE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">📉</span>
+                    <span>Andamento Mensile</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="moneyTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- ASSET TRADING -->
+            <div class="section-title">📊 Portafoglio Investimenti</div>
+            <div class="money-section" id="trading-assets-container">
+                <!-- Asset cards will be populated here -->
+            </div>
+
+            <!-- ANALISI TRADING -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">💹</span>
+                    <span>Performance Assets (7 giorni)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="tradingChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: SALUTE ===== -->
+        <div id="health" class="tab-content">
+            <div class="section-title">🏥 Monitoraggio Salute Completo</div>
+
+            <div class="grid-3">
+                <!-- IDRATAZIONE -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">💧</span>
+                        <span>Idratazione</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Bicchieri Oggi</span>
+                        <span class="stat-value" id="health-water">0/8</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Millilitri</span>
+                        <span class="stat-value" id="health-water-ml">0ml</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="health-water-bar" style="width: 0%"></div>
+                    </div>
+                    <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                        💡 Tip: Usa <code>/acqua 2</code> per registrare bicchieri
+                    </div>
+                </div>
+
+                <!-- SONNO -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">😴</span>
+                        <span>Sonno</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Ore Notte Scorsa</span>
+                        <span class="stat-value" id="health-sleep-hours">0h</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Qualità</span>
+                        <span class="stat-value" id="health-sleep-quality">-/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Settimana</span>
+                        <span class="stat-value" id="health-sleep-avg">0h</span>
+                    </div>
+                </div>
+
+                <!-- STRESS -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">😰</span>
+                        <span>Livello Stress</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Stress Attuale</span>
+                        <span class="stat-value neutral" id="health-stress">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Fattori Scatenanti</span>
+                        <span class="stat-value" id="health-stress-factors">-</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Settimana</span>
+                        <span class="stat-value" id="health-stress-avg">5/10</span>
+                    </div>
+                </div>
+
+                <!-- SERENITÀ -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🧘</span>
+                        <span>Serenità</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Livello Serenità</span>
+                        <span class="stat-value" id="health-serenity">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Meditazione Min</span>
+                        <span class="stat-value" id="health-meditation">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Sessioni Settimana</span>
+                        <span class="stat-value positive" id="health-meditation-sessions">0</span>
+                    </div>
+                </div>
+
+                <!-- NUTRIZIONE -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🍎</span>
+                        <span>Nutrizione</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Pasti Sani Oggi</span>
+                        <span class="stat-value positive" id="health-meals">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Verdure Porzioni</span>
+                        <span class="stat-value" id="health-vegetables">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Giornaliera</span>
+                        <span class="stat-value" id="health-meals-avg">0</span>
+                    </div>
+                </div>
+
+                <!-- ENERGIA -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">⚡</span>
+                        <span>Livello Energia</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Energia Attuale</span>
+                        <span class="stat-value" id="health-energy">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Affaticamento</span>
+                        <span class="stat-value neutral" id="health-fatigue">5/10</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Tendenza</span>
+                        <span class="stat-value" id="health-energy-trend">→</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFICO TREND SALUTE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">📈</span>
+                    <span>Trend Salute Settimanale</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="healthTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- GRAFICO RADAR SALUTE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">🎯</span>
+                    <span>Profilo Salute</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="healthRadarChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: VIZI ===== -->
+        <div id="vices" class="tab-content">
+            <div class="section-title">🚬 Monitoraggio Vizi e Dipendenze</div>
+
+            <div class="grid-2">
+                <!-- SIGARETTE -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🚬</span>
+                        <span>Sigarette</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Oggi</span>
+                        <span class="stat-value negative" id="vice-cigs-today">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settimana</span>
+                        <span class="stat-value negative" id="vice-cigs-week">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Giornaliera</span>
+                        <span class="stat-value" id="vice-cigs-avg">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Giorni Senza</span>
+                        <span class="stat-value positive" id="vice-cigs-streak">0</span>
+                    </div>
+                    <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                        💡 Tip: Usa <code>/sigarette 2</code> per registrare
+                    </div>
+                </div>
+
+                <!-- CANNE -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🍃</span>
+                        <span>Canne</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Oggi</span>
+                        <span class="stat-value negative" id="vice-joints-today">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settimana</span>
+                        <span class="stat-value negative" id="vice-joints-week">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media Giornaliera</span>
+                        <span class="stat-value" id="vice-joints-avg">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Giorni Senza</span>
+                        <span class="stat-value positive" id="vice-joints-streak">0</span>
+                    </div>
+                    <div style="color: #999; font-size: 0.9em; margin-top: 15px;">
+                        💡 Tip: Usa <code>/canne 1</code> per registrare
+                    </div>
+                </div>
+            </div>
+
+            <!-- ANDAMENTO VIZI -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">📉</span>
+                    <span>Andamento Ultimi 30 giorni</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="vicesTrendChart"></canvas>
+                </div>
+            </div>
+
+            <!-- CONFRONTO SIGARETTE VS CANNE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">⚖️</span>
+                    <span>Confronto Sigarette vs Canne</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="vicesComparisonChart"></canvas>
+                </div>
+            </div>
+
+            <!-- INSIGHT VIZI -->
+            <div class="insight-box">
+                <strong>💡 Analisi:</strong>
+                <p id="vice-insight">I dati verranno caricati dall'API...</p>
+            </div>
+        </div>
+
+        <!-- ===== TAB: PALESTRA ===== -->
+        <div id="gym" class="tab-content">
+            <div class="section-title">🏋️ Allenamento e Fitness</div>
+
+            <div class="grid-3">
+                <!-- STATISTICHE GENERALI -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">📊</span>
+                        <span>Statistiche Mese</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Sessioni Totali</span>
+                        <span class="stat-value positive" id="gym-sessions">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Ore Totali</span>
+                        <span class="stat-value positive" id="gym-total-hours">0h</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Media per Sessione</span>
+                        <span class="stat-value" id="gym-avg-duration">0min</span>
+                    </div>
+                </div>
+
+                <!-- SPLIT ALLENAMENTO -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">💪</span>
+                        <span>Split Allenamento</span>
+                    </div>
+                    <div id="gym-splits" style="margin-top: 10px;"></div>
+                </div>
+
+                <!-- STREAKS -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🔥</span>
+                        <span>Streaks Attivi</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Giorni Consecutivi</span>
+                        <span class="stat-value positive" id="gym-current-streak">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Miglior Streak</span>
+                        <span class="stat-value positive" id="gym-best-streak">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settimane Attive</span>
+                        <span class="stat-value positive" id="gym-active-weeks">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GRAFICO SESSIONI -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">📈</span>
+                    <span>Sessioni Settimanali</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gymSessionsChart"></canvas>
+                </div>
+            </div>
+
+            <!-- GRAFICO EVOLUZIONE -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">💪</span>
+                    <span>Evoluzione Mensile</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gymProgressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- GRAFICO SPLIT -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">🎯</span>
+                    <span>Distribuzione Split</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="gymSplitChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== TAB: ANALISI ===== -->
+        <div id="analytics" class="tab-content">
+            <div class="section-title">📊 Analisi Avanzata Integrata</div>
+
+            <!-- CORRELAZIONI -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">🔗</span>
+                    <span>Correlazioni Vita (Ultimi 30 giorni)</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="correlationChart"></canvas>
+                </div>
+                <div class="insight-box">
+                    <strong>📌 Insights:</strong>
+                    <ul id="correlation-insights" style="margin-top: 10px; margin-left: 20px;">
+                        <li>Esercizio fisico correlato positivamente con mood</li>
+                        <li>Stress ridotto con più ore di sonno</li>
+                        <li>Vizi correlati negativamente con serenità</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- SCORE COMPLESSIVO -->
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">🎯</span>
+                        <span>Life Score Complessivo</span>
+                    </div>
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 3.5em; font-weight: 700; color: #667eea;" id="life-score-value">0/100</div>
+                        <div style="font-size: 0.9em; color: #666; margin-top: 10px;">Basato su 9 parametri di vita</div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="life-score-bar" style="width: 0%; background: linear-gradient(90deg, #667eea, #764ba2);"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <span class="emoji">📈</span>
+                        <span>Trend Generale</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Trend 7 giorni</span>
+                        <span class="stat-value positive" id="trend-7days">+2%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Trend 30 giorni</span>
+                        <span class="stat-value positive" id="trend-30days">+5%</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settore Migliore</span>
+                        <span class="stat-value positive" id="best-sector">Salute</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Settore da Migliorare</span>
+                        <span class="stat-value negative" id="worst-sector">Finanze</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HEATMAP ATTIVITÀ -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">🔥</span>
+                    <span>Mappa Calore Attività (Ultimi 30 giorni)</span>
+                </div>
+                <div style="overflow-x: auto; padding: 20px 0;">
+                    <canvas id="heatmapChart" style="height: 200px;"></canvas>
+                </div>
+            </div>
+
+            <!-- RACCOMANDAZIONI -->
+            <div class="card full-width">
+                <div class="card-header">
+                    <span class="emoji">💡</span>
+                    <span>Raccomandazioni Personalizzate</span>
+                </div>
+                <div id="recommendations-container" style="padding: 10px 0;">
+                    <div style="color: #999;">Generando raccomandazioni...</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="last-update">
+            <p>Ultimo aggiornamento: <span id="last-update">--:--</span></p>
+            <p>✨ Dashboard Automatico - Aggiorna ogni 30 secondi</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000/api';
+        let charts = {};
+
+        // DATI ESEMPIO
+        const mockData = {
+            stats: {
+                money: {
+                    today_balance: 15,
+                    week_balance: 85,
+                    month_balance: 250,
+                    income_today: 25,
+                    expense_today: 10,
+                    income_month: 2000,
+                    expense_month: 1750,
+                    portfolio: 5000,
+                    returns: 150,
+                    saved_month: 250,
+                    save_goal: 300
+                },
+                health: {
+                    hydration: 6,
+                    sleep_hours: 7.5,
+                    sleep_quality: 7,
+                    stress: 6,
+                    serenity: 6,
+                    meditation_minutes: 20,
+                    healthy_meals: 2,
+                    energy: 7,
+                    fatigue: 4
+                },
+                vices: {
+                    cigs_today: 2,
+                    cigs_week: 12,
+                    joints_today: 0,
+                    joints_week: 2
+                },
+                gym: {
+                    sessions_month: 12,
+                    total_hours: 24,
+                    current_streak: 3,
+                    best_streak: 7,
+                    splits: {
+                        'Petto': 3,
+                        'Schiena': 3,
+                        'Gambe': 3,
+                        'Spalle': 2,
+                        'Cardio': 1
+                    }
+                },
+                mood: {
+                    average: 6,
+                    serenity: 6,
+                    min: 4,
+                    max: 8
+                },
+                tasks: {
+                    done_today: 5,
+                    pending: 3,
+                    rate: 62
+                },
+                nutrition: {
+                    healthy_meals: 2,
+                    vegetables: 3,
+                    calories: 1850
+                }
+            },
+            events: [
+                { type: 'money', value: '+15€', note: 'Pagamento ricevuto', created_at: new Date(Date.now() - 3600000).toISOString() },
+                { type: 'gym', value: 'Petto', note: 'Sessione completata - 60 min', created_at: new Date(Date.now() - 7200000).toISOString() },
+                { type: 'mood', value: '7/10', note: 'Ottimo giorno', created_at: new Date(Date.now() - 10800000).toISOString() },
+                { type: 'smoke', value: '2', note: 'Sigarette', created_at: new Date(Date.now() - 14400000).toISOString() },
+                { type: 'health', value: '7.5h', note: 'Sonno notturno', created_at: new Date(Date.now() - 18000000).toISOString() },
+            ],
+            analytics: {
+                by_category: {
+                    'Cibo': 350,
+                    'Trasporti': 120,
+                    'Intrattenimento': 180,
+                    'Utenze': 200,
+                    'Altro': 150
+                },
+                trading_assets: [
+                    { name: 'Bitcoin', price: 45230, change: 2.5, change7d: 5.2 },
+                    { name: 'Ethereum', price: 2850, change: -1.2, change7d: 3.8 },
+                    { name: 'Apple Stock', price: 182.5, change: 0.8, change7d: 2.1 },
+                    { name: 'ETF SP500', price: 450.3, change: 1.2, change7d: 1.9 }
+                ]
+            }
+        };
+
+        // ===== UTILITY =====
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            // Trigger chart refresh
+            setTimeout(() => {
+                Object.values(charts).forEach(chart => {
+                    if (chart && chart.resize) chart.resize();
+                });
+            }, 100);
+        }
+
+        function formatMoney(value) {
+            const num = parseFloat(value);
+            const sign = num >= 0 ? '+' : '';
+            return `${sign}${num.toFixed(2)}€`;
+        }
+
+        function formatDate(isoDate) {
+            const date = new Date(isoDate);
+            return date.toLocaleString('it-IT', {
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        function getEventEmoji(type) {
+            const emojis = {
+                'money': '💰',
+                'smoke': '🚬',
+                'gym': '🏋️',
+                'mood': '😊',
+                'health': '🏥',
+                'note': '📝',
+                'system': '⚙️'
+            };
+            return emojis[type] || '📌';
+        }
+
+        // ===== AGGIORNAMENTO DATI =====
+        async function refreshData() {
+            try {
+                document.getElementById('error-container').innerHTML = '';
+
+                // SIMULA FETCH - In produzione collegarsi a bot Telegram + DB
+                const stats = mockData.stats;
+                const events = mockData.events;
+                const analytics = mockData.analytics;
+
+                updateOverviewTab(stats, events);
+                updateMoneyTab(stats, analytics);
+                updateHealthTab(stats);
+                updateVicesTab(stats);
+                updateGymTab(stats);
+                updateAnalyticsTab(stats, events);
+
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString('it-IT');
+
+            } catch (error) {
+                console.error('Errore:', error);
+                showError('❌ Errore nel caricamento dati. Verifica la connessione.');
+            }
+        }
+
+        // ===== UPDATE OVERVIEW =====
+        function updateOverviewTab(stats, events) {
+            document.getElementById('ov-money-today').textContent = formatMoney(stats.money.today_balance);
+            document.getElementById('ov-money-week').textContent = formatMoney(stats.money.week_balance);
+            document.getElementById('ov-money-month').textContent = formatMoney(stats.money.month_balance);
+
+            document.getElementById('ov-hydration').textContent = `${stats.health.hydration}/10`;
+            document.getElementById('ov-sleep').textContent = `${stats.health.sleep_hours}h`;
+            document.getElementById('ov-stress').textContent = `${stats.health.stress}/10`;
+
+            document.getElementById('ov-mood').textContent = `${stats.mood.average}/10`;
+            document.getElementById('ov-serenity').textContent = `${stats.health.serenity}/10`;
+            document.getElementById('ov-mood-avg').textContent = `${(stats.mood.average + 1)/2}/10`;
+
+            document.getElementById('ov-cigs').textContent = stats.vices.cigs_today;
+            document.getElementById('ov-joints').textContent = stats.vices.joints_today;
+            document.getElementById('ov-vices-avg').textContent = ((stats.vices.cigs_week + stats.vices.joints_week) / 7).toFixed(1);
+
+            document.getElementById('ov-gym-total').textContent = stats.gym.sessions_month;
+            document.getElementById('ov-gym-hours').textContent = `${stats.gym.total_hours}h`;
+            document.getElementById('ov-gym-streak').textContent = stats.gym.current_streak;
+
+            document.getElementById('ov-tasks-done').textContent = stats.tasks.done_today;
+            document.getElementById('ov-tasks-pending').textContent = stats.tasks.pending;
+            document.getElementById('ov-tasks-rate').textContent = `${stats.tasks.rate}%`;
+
+            document.getElementById('ov-saved-month').textContent = formatMoney(stats.money.saved_month);
+            document.getElementById('ov-save-goal').textContent = formatMoney(stats.money.save_goal);
+            const saveProgress = (stats.money.saved_month / stats.money.save_goal * 100).toFixed(0);
+            document.getElementById('ov-save-progress').textContent = `${saveProgress}%`;
+
+            document.getElementById('ov-healthy-meals').textContent = stats.nutrition.healthy_meals;
+            document.getElementById('ov-calories').textContent = stats.nutrition.calories;
+            document.getElementById('ov-meals-avg').textContent = (stats.nutrition.healthy_meals * 1.2).toFixed(1);
+
+            displayEvents(events);
+            updateOverviewChart();
+        }
+
+        // ===== UPDATE MONEY =====
+        function updateMoneyTab(stats, analytics) {
+            document.getElementById('mon-income-today').textContent = formatMoney(stats.money.income_today);
+            document.getElementById('mon-expense-today').textContent = formatMoney(-stats.money.expense_today);
+            document.getElementById('mon-net-today').textContent = formatMoney(stats.money.income_today - stats.money.expense_today);
+
+            document.getElementById('mon-income-month').textContent = formatMoney(stats.money.income_month);
+            document.getElementById('mon-expense-month').textContent = formatMoney(-stats.money.expense_month);
+            document.getElementById('mon-net-month').textContent = formatMoney(stats.money.income_month - stats.money.expense_month);
+
+            document.getElementById('mon-portfolio').textContent = formatMoney(stats.money.portfolio);
+            document.getElementById('mon-returns').textContent = formatMoney(stats.money.returns);
+            document.getElementById('mon-roi').textContent = `+${(stats.money.returns / stats.money.portfolio * 100).toFixed(1)}%`;
+
+            // Grafico categorie
+            updateExpenseCategoryChart(analytics.by_category);
+            updateMoneyTrendChart();
+            updateTradingAssets(analytics.trading_assets);
+            updateTradingChart();
+        }
+
+        // ===== UPDATE HEALTH =====
+        function updateHealthTab(stats) {
+            document.getElementById('health-water').textContent = `${stats.health.hydration}/10`;
+            document.getElementById('health-water-ml').textContent = `${stats.health.hydration * 250}ml`;
+            document.getElementById('health-water-bar').style.width = `${stats.health.hydration * 10}%`;
+
+            document.getElementById('health-sleep-hours').textContent = `${stats.health.sleep_hours}h`;
+            document.getElementById('health-sleep-quality').textContent = `${stats.health.sleep_quality}/10`;
+            document.getElementById('health-sleep-avg').textContent = `${(stats.health.sleep_hours + 0.5).toFixed(1)}h`;
+
+            document.getElementById('health-stress').textContent = `${stats.health.stress}/10`;
+            document.getElementById('health-stress-avg').textContent = `${(stats.health.stress + 1)/2}/10`;
+
+            document.getElementById('health-serenity').textContent = `${stats.health.serenity}/10`;
+            document.getElementById('health-meditation').textContent = stats.health.meditation_minutes;
+            document.getElementById('health-meditation-sessions').textContent = Math.floor(stats.health.meditation_minutes / 15);
+
+            document.getElementById('health-meals').textContent = stats.nutrition.healthy_meals;
+            document.getElementById('health-vegetables').textContent = stats.nutrition.vegetables;
+
+            document.getElementById('health-energy').textContent = `${stats.health.energy}/10`;
+            document.getElementById('health-fatigue').textContent = `${stats.health.fatigue}/10`;
+            document.getElementById('health-energy-trend').textContent = stats.health.energy > stats.health.fatigue ? '📈' : '📉';
+
+            updateHealthTrendChart();
+            updateHealthRadarChart(stats);
+        }
+
+        // ===== UPDATE VICES =====
+        function updateVicesTab(stats) {
+            document.getElementById('vice-cigs-today').textContent = stats.vices.cigs_today;
+            document.getElementById('vice-cigs-week').textContent = stats.vices.cigs_week;
+            document.getElementById('vice-cigs-avg').textContent = (stats.vices.cigs_week / 7).toFixed(1);
+            document.getElementById('vice-cigs-streak').textContent = '5 giorni' ;
+
+            document.getElementById('vice-joints-today').textContent = stats.vices.joints_today;
+            document.getElementById('vice-joints-week').textContent = stats.vices.joints_week;
+            document.getElementById('vice-joints-avg').textContent = (stats.vices.joints_week / 7).toFixed(2);
+            document.getElementById('vice-joints-streak').textContent = '2 giorni';
+
+            document.getElementById('vice-insight').textContent = `Consumo medio settimanale: ${(stats.vices.cigs_week / 7).toFixed(1)} sigarette/giorno e ${(stats.vices.joints_week / 7).toFixed(2)} canne/giorno. Trend in miglioramento! 📈`;
+
+            updateVicesTrendChart();
+            updateVicesComparisonChart(stats);
+        }
+
+        // ===== UPDATE GYM =====
+        function updateGymTab(stats) {
+            document.getElementById('gym-sessions').textContent = stats.gym.sessions_month;
+            document.getElementById('gym-total-hours').textContent = `${stats.gym.total_hours}h`;
+            document.getElementById('gym-avg-duration').textContent = `${Math.round(stats.gym.total_hours * 60 / stats.gym.sessions_month)}min`;
+
+            const gymSplits = Object.entries(stats.gym.splits)
+                .map(([type, count]) => `<div class="stat"><span class="stat-label">${type}</span><span class="stat-value">${count}</span></div>`)
+                .join('');
+            document.getElementById('gym-splits').innerHTML = gymSplits;
+
+            document.getElementById('gym-current-streak').textContent = `${stats.gym.current_streak} giorni`;
+            document.getElementById('gym-best-streak').textContent = `${stats.gym.best_streak} giorni`;
+            document.getElementById('gym-active-weeks').textContent = Math.ceil(stats.gym.sessions_month / 3);
+
+            updateGymSessionsChart();
+            updateGymProgressChart();
+            updateGymSplitChart(stats.gym.splits);
+        }
+
+        // ===== UPDATE ANALYTICS =====
+        function updateAnalyticsTab(stats, events) {
+            const lifeScore = calculateLifeScore(stats);
+            document.getElementById('life-score-value').textContent = `${lifeScore}/100`;
+            document.getElementById('life-score-bar').style.width = `${lifeScore}%`;
+
+            document.getElementById('trend-7days').textContent = '+2.5%';
+            document.getElementById('trend-30days').textContent = '+5.8%';
+            document.getElementById('best-sector').textContent = 'Fitness';
+            document.getElementById('worst-sector').textContent = 'Vizi';
+
+            updateCorrelationChart(stats);
+            updateHeatmapChart();
+            generateRecommendations(stats);
+        }
+
+        // ===== CHART FUNCTIONS =====
+        function updateOverviewChart() {
+            const ctx = document.getElementById('overviewChart');
+            if (charts.overview) charts.overview.destroy();
+            charts.overview = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Salute', 'Mood', 'Finanze', 'Fitness', 'Vizi (↓)'],
+                    datasets: [{
+                        label: 'Questa Settimana',
+                        data: [75, 65, 70, 80, 40],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { min: 0, max: 100 } }
+                }
+            });
+        }
+
+        function updateExpenseCategoryChart(categories) {
+            const ctx = document.getElementById('expenseCategoryChart');
+            if (charts.expense) charts.expense.destroy();
+            charts.expense = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        data: Object.values(categories),
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateMoneyTrendChart() {
+            const ctx = document.getElementById('moneyTrendChart');
+            if (charts.moneyTrend) charts.moneyTrend.destroy();
+            charts.moneyTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Sett 1', 'Sett 2', 'Sett 3', 'Sett 4'],
+                    datasets: [
+                        {
+                            label: 'Entrate',
+                            data: [500, 520, 480, 550],
+                            borderColor: '#4CAF50',
+                            backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                            fill: true
+                        },
+                        {
+                            label: 'Spese',
+                            data: [400, 420, 450, 380],
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateTradingAssets(assets) {
+            const container = document.getElementById('trading-assets-container');
+            container.innerHTML = assets.map(asset => `
+                <div class="trading-card">
+                    <div class="trading-header">
+                        <div class="asset-name">${asset.name}</div>
+                        <div>
+                            <div class="asset-price">${asset.price}$</div>
+                            <div class="asset-change ${asset.change >= 0 ? 'up' : 'down'}">
+                                ${asset.change >= 0 ? '📈' : '📉'} ${Math.abs(asset.change).toFixed(2)}% (giorno)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Cambio 7 giorni</span>
+                        <span class="stat-value ${asset.change7d >= 0 ? 'positive' : 'negative'}">
+                            ${asset.change7d >= 0 ? '+' : ''}${asset.change7d.toFixed(2)}%
+                        </span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateTradingChart() {
+            const ctx = document.getElementById('tradingChart');
+            if (charts.trading) charts.trading.destroy();
+            charts.trading = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
+                    datasets: [
+                        {
+                            label: 'Bitcoin',
+                            data: [44800, 45100, 45230, 45000, 44900, 45300, 45230],
+                            borderColor: '#FF9800',
+                            tension: 0.4,
+                            fill: false
+                        },
+                        {
+                            label: 'Ethereum',
+                            data: [2800, 2820, 2840, 2835, 2820, 2850, 2850],
+                            borderColor: '#2196F3',
+                            tension: 0.4,
+                            fill: false
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateHealthTrendChart() {
+            const ctx = document.getElementById('healthTrendChart');
+            if (charts.healthTrend) charts.healthTrend.destroy();
+            charts.healthTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
+                    datasets: [
+                        {
+                            label: 'Stress',
+                            data: [7, 6, 5, 6, 7, 5, 6],
+                            borderColor: '#f44336',
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Serenità',
+                            data: [5, 6, 7, 6, 5, 7, 6],
+                            borderColor: '#4CAF50',
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateHealthRadarChart(stats) {
+            const ctx = document.getElementById('healthRadarChart');
+            if (charts.healthRadar) charts.healthRadar.destroy();
+            charts.healthRadar = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['Sonno', 'Idratazione', 'Energia', 'Serenità', 'Nutrizione'],
+                    datasets: [{
+                        label: 'Salute Attuale',
+                        data: [75, 60, 70, 60, 70],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        pointBackgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { r: { min: 0, max: 100 } }
+                }
+            });
+        }
+
+        function updateVicesTrendChart() {
+            const ctx = document.getElementById('vicesTrendChart');
+            if (charts.vicesTrend) charts.vicesTrend.destroy();
+            charts.vicesTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({length: 30}, (_, i) => `${i+1}`),
+                    datasets: [{
+                        label: 'Sigarette + Canne',
+                        data: [3, 2, 4, 3, 2, 1, 2, 3, 2, 1, 2, 2, 1, 0, 1, 2, 1, 2, 3, 2, 1, 2, 1, 1, 0, 1, 2, 2, 1, 0],
+                        borderColor: '#f44336',
+                        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function updateVicesComparisonChart(stats) {
+            const ctx = document.getElementById('vicesComparisonChart');
+            if (charts.vicesComp) charts.vicesComp.destroy();
+            charts.vicesComp = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Settimana Scorsa', 'Questa Settimana'],
+                    datasets: [
+                        {
+                            label: 'Sigarette',
+                            data: [15, 12],
+                            backgroundColor: '#f44336'
+                        },
+                        {
+                            label: 'Canne',
+                            data: [3, 2],
+                            backgroundColor: '#FF6F00'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateGymSessionsChart() {
+            const ctx = document.getElementById('gymSessionsChart');
+            if (charts.gymSessions) charts.gymSessions.destroy();
+            charts.gymSessions = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'],
+                    datasets: [{
+                        label: 'Sessioni',
+                        data: [1, 1, 0, 1, 0, 1, 0],
+                        backgroundColor: '#667eea'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function updateGymProgressChart() {
+            const ctx = document.getElementById('gymProgressChart');
+            if (charts.gymProgress) charts.gymProgress.destroy();
+            charts.gymProgress = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Sett 1', 'Sett 2', 'Sett 3', 'Sett 4'],
+                    datasets: [{
+                        label: 'Ore Allenamento',
+                        data: [5, 6, 6, 7],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function updateGymSplitChart(splits) {
+            const ctx = document.getElementById('gymSplitChart');
+            if (charts.gymSplit) charts.gymSplit.destroy();
+            charts.gymSplit = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(splits),
+                    datasets: [{
+                        data: Object.values(splits),
+                        backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#00f2fe']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        }
+
+        function updateCorrelationChart(stats) {
+            const ctx = document.getElementById('correlationChart');
+            if (charts.correlation) charts.correlation.destroy();
+            charts.correlation = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Esercizio vs Mood',
+                            data: [{x: 80, y: 65, r: 15}],
+                            backgroundColor: 'rgba(102, 126, 234, 0.6)'
+                        },
+                        {
+                            label: 'Sonno vs Stress',
+                            data: [{x: 75, y: 35, r: 15}],
+                            backgroundColor: 'rgba(76, 175, 80, 0.6)'
+                        },
+                        {
+                            label: 'Vizi vs Serenità',
+                            data: [{x: 30, y: 65, r: 15}],
+                            backgroundColor: 'rgba(244, 67, 54, 0.6)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { min: 0, max: 100 },
+                        y: { min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+
+        function updateHeatmapChart() {
+            const ctx = document.getElementById('heatmapChart');
+            if (charts.heatmap) charts.heatmap.destroy();
+            charts.heatmap = new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: Array.from({length: 30}, (_, i) => ({
+                        label: `Giorno ${i+1}`,
+                        data: [{x: i, y: Math.random() * 10, r: 5 + Math.random() * 5}],
+                        backgroundColor: `hsla(${i * 12}, 70%, 50%, 0.6)`
+                    }))
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        function displayEvents(events) {
+            const container = document.getElementById('events-container');
+            if (!events || events.length === 0) {
+                container.innerHTML = '<p style="color: #999;">Nessun evento registrato</p>';
+                return;
+            }
+
+            container.innerHTML = events
+                .slice(0, 15)
+                .map(event => `
+                    <div class="event-item">
+                        <div>
+                            <div class="event-type">${getEventEmoji(event.type)} ${event.type}</div>
+                            ${event.note ? `<div class="event-note">${event.note}</div>` : ''}
+                        </div>
+                        <div style="text-align: right;">
+                            <div class="event-value">${event.value}</div>
+                            <div class="event-time">${formatDate(event.created_at)}</div>
+                        </div>
+                    </div>
+                `)
+                .join('');
+        }
+
+        function calculateLifeScore(stats) {
+            const scores = {
+                health: (stats.health.hydration + stats.health.sleep_quality + stats.health.energy) / 3,
+                mood: stats.mood.average * 10,
+                money: Math.min((stats.money.portfolio / 10000) * 100, 100),
+                fitness: (stats.gym.sessions_month / 15) * 100,
+                vices_neg: Math.max(0, 100 - (stats.vices.cigs_week * 3 + stats.vices.joints_week * 5)),
+                stress_neg: Math.max(0, 100 - stats.health.stress * 10),
+                serenity: stats.health.serenity * 10,
+                tasks: stats.tasks.rate,
+                nutrition: (stats.nutrition.healthy_meals / 3) * 100
+            };
+            return Math.round(Object.values(scores).reduce((a, b) => a + b) / Object.keys(scores).length);
+        }
+
+        function generateRecommendations(stats) {
+            const recommendations = [];
+            if (stats.health.hydration < 5) recommendations.push('💧 Bevi più acqua! Cerca di raggiungere almeno 8 bicchieri al giorno.');
+            if (stats.health.stress > 7) recommendations.push('🧘 Lo stress è alto. Prova a meditare o fare esercizio.');
+            if (stats.vices.cigs_week > 15) recommendations.push('🚬 Riduci il fumo. Ogni giorno senza fumare è una vittoria!');
+            if (stats.gym.sessions_month < 8) recommendations.push('🏋️ Aumenta gli allenamenti! Anche 3 volte a settimana fa la differenza.');
+            if (stats.health.sleep_hours < 7) recommendations.push('😴 Dormi di più! Almeno 7-8 ore per una buona salute.');
+            if (stats.money.saved_month < stats.money.save_goal / 2) recommendations.push('💰 Accelera il risparmio! Sei a metà strada del tuo obiettivo.');
+            if (stats.mood.average < 5) recommendations.push('😊 Il tuo mood è basso. Fai un attività che ami!');
+
+            const container = document.getElementById('recommendations-container');
+            container.innerHTML = recommendations.map(r => `
+                <div class="insight-box" style="margin-bottom: 10px; border-left-color: #FF9800;">
+                    ${r}
+                </div>
+            `).join('');
+        }
+
+        function showError(message) {
+            document.getElementById('error-container').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // ===== INIT =====
+        refreshData();
+        setInterval(refreshData, 30000);
+    </script>
+</body>
+</html>
